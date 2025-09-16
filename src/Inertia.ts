@@ -4,9 +4,9 @@
  * 摩擦力逐渐减小速度直到停止。
  */
 export class Inertia {
-  private _position: number[]
-  private _velocity: number[]
-  private readonly friction: number
+  position: number[]
+  velocity: number[]
+  readonly friction: number
   private static readonly VELOCITY_THRESHOLD = 1e-10
 
   /**
@@ -19,30 +19,44 @@ export class Inertia {
       throw new Error('摩擦系数必须在0到1之间')
     }
 
-    this._position = [...initialPosition]
-    this._velocity = Array.from({ length: initialPosition.length }, () => 0)
+    this.position = [...initialPosition]
+    this.velocity = Array.from({ length: initialPosition.length }, () => 0)
     this.friction = friction
   }
 
   /**
    * 获取当前位置。
    */
-  get position(): number[] {
-    return [...this._position]
+  getPosition(): number[] {
+    return [...this.position]
   }
 
   /**
    * 获取当前速度。
    */
-  get velocity(): number[] {
-    return [...this._velocity]
+  getVelocity(): number[] {
+    return [...this.velocity]
   }
 
   /**
    * 获取摩擦系数。
    */
-  get frictionCoefficient(): number {
+  getFrictionCoefficient(): number {
     return this.friction
+  }
+
+  /**
+   * 获取当前速度（速度向量的大小）。
+   */
+  getSpeed(): number {
+    return Math.sqrt(this.velocity.reduce((sum, v) => sum + v * v, 0))
+  }
+
+  /**
+   * 获取空间的维度。
+   */
+  getDimensions(): number {
+    return this.position.length
   }
 
   /**
@@ -51,17 +65,17 @@ export class Inertia {
    */
   update(deltaTime: number): void {
     // 根据速度更新位置
-    for (let i = 0; i < this._position.length; i++) {
-      this._position[i] += this._velocity[i] * deltaTime
+    for (let i = 0; i < this.position.length; i++) {
+      this.position[i] += this.velocity[i] * deltaTime
     }
 
     // 应用摩擦力减小速度
-    for (let i = 0; i < this._velocity.length; i++) {
-      this._velocity[i] *= this.friction ** deltaTime
+    for (let i = 0; i < this.velocity.length; i++) {
+      this.velocity[i] *= this.friction ** deltaTime
 
       // 如果速度非常小，则将其设置为零以防止无限滑动
-      if (Math.abs(this._velocity[i]) < Inertia.VELOCITY_THRESHOLD) {
-        this._velocity[i] = 0
+      if (Math.abs(this.velocity[i]) < Inertia.VELOCITY_THRESHOLD) {
+        this.velocity[i] = 0
       }
     }
   }
@@ -71,12 +85,12 @@ export class Inertia {
    * @param impulse - 要施加的冲量向量
    */
   applyImpulse(impulse: number[]): void {
-    if (impulse.length !== this._velocity.length) {
+    if (impulse.length !== this.velocity.length) {
       throw new Error('冲量维度必须与位置/速度维度匹配')
     }
 
-    for (let i = 0; i < this._velocity.length; i++) {
-      this._velocity[i] += impulse[i]
+    for (let i = 0; i < this.velocity.length; i++) {
+      this.velocity[i] += impulse[i]
     }
   }
 
@@ -85,31 +99,17 @@ export class Inertia {
    * @param velocity - 新的速度向量
    */
   setVelocity(velocity: number[]): void {
-    if (velocity.length !== this._velocity.length) {
+    if (velocity.length !== this.velocity.length) {
       throw new Error('速度维度必须与位置/速度维度匹配')
     }
 
-    this._velocity = [...velocity]
+    this.velocity = [...velocity]
   }
 
   /**
    * 检查物体是否处于静止状态（不移动）。
    */
   isAtRest(): boolean {
-    return this._velocity.every(v => Math.abs(v) < Inertia.VELOCITY_THRESHOLD)
-  }
-
-  /**
-   * 获取当前速度（速度向量的大小）。
-   */
-  get speed(): number {
-    return Math.sqrt(this._velocity.reduce((sum, v) => sum + v * v, 0))
-  }
-
-  /**
-   * 获取空间的维度。
-   */
-  get dimensions(): number {
-    return this._position.length
+    return this.velocity.every(v => Math.abs(v) < Inertia.VELOCITY_THRESHOLD)
   }
 }

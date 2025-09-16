@@ -1,44 +1,40 @@
 # Project Summary
 
 ## Overall Goal
-Create a TypeScript inertia library for n-dimensional space simulation with friction, supporting position/velocity tracking and realistic physics.
+Create a TypeScript library for simulating inertia and friction in n-dimensional space with proper testing and documentation.
 
 ## Key Knowledge
-- Using Bun as the runtime environment and build tool
-- Project follows standard Bun library structure with src/ directory
+- Using Bun as the runtime environment and package manager
+- TypeScript for type safety with strict mode enabled
+- ESLint with @antfu/eslint-config for code quality
+- Bun test framework for unit testing
+- VS Code configured with auto-save and ESLint auto-fix on save
+- Library follows standard Bun project structure with src/, examples/ directories
 - All files use lowercase naming convention with hyphens
-- Unit tests are placed alongside implementation files (src/inertia.ts and src/inertia.test.ts)
-- Examples are kept in separate examples/ directory
-- VS Code configured with ESLint auto-fix on save and auto-save on focus change
-- Testing done with Bun's built-in test framework
-- Library supports any number of dimensions (1D, 2D, 3D, etc.)
+- No private properties or underscore prefixes in classes
+- Using functions instead of getters for public API methods
 
 ## Recent Actions
-- Implemented core Inertia class with n-dimensional support
-- Added position and velocity tracking with friction simulation
-- Implemented impulse application and rest detection functionality
-- Created comprehensive test suite with 10 test cases covering all functionality
-- Wrote usage examples demonstrating 1D, 2D, and 3D scenarios
-- Configured proper project structure following community standards
-- Set up VS Code development environment with ESLint integration
-- All documentation and comments written in Chinese
-- Removed unnecessary debug files and organized codebase
+- Restructured project to follow standard Bun library conventions
+- Moved tests to src/ directory alongside implementation
+- Removed redundant test.ts file
+- Fixed ESLint errors by replacing console.log with console.info
+- Updated Inertia class to remove private modifiers and underscore prefixes
+- Replaced getter methods with explicit getter functions
+- Updated all test and example files to use new API method names
+- All unit tests passing (10/10)
+- ESLint running without errors
 
 ## Current Plan
-1. [DONE] Create Inertia class with n-dimensional support
-2. [DONE] Implement position and velocity tracking
-3. [DONE] Implement friction simulation
-4. [DONE] Add impulse application functionality
-5. [DONE] Implement rest detection
-6. [DONE] Create comprehensive test suite
-7. [DONE] Write documentation and examples
-8. [DONE] Set up package metadata
-9. [DONE] Configure VS Code ESLint auto-fix and auto-save
-10. [DONE] Organize project structure following best practices
-11. [DONE] Ensure all files follow naming conventions
-12. [DONE] Clean up unnecessary files
+1. [DONE] Restructure project to follow standard conventions
+2. [DONE] Fix ESLint errors and code quality issues
+3. [DONE] Update Inertia class API to remove getters and private properties
+4. [DONE] Update all dependent files to use new API
+5. [TODO] Run example file to verify functionality
+6. [TODO] Final TypeScript compilation check
+7. [TODO] Update documentation to reflect API changes
 
 ---
 
 ## Summary Metadata
-**Update time**: 2025-09-16T11:33:45.111Z
+**Update time**: 2025-09-16T12:17:15.794Z 
