@@ -1,53 +1,81 @@
-import {
-  Application,
-  Assets,
-  Container,
-  Sprite,
-} from 'pixi.js'
+import { gsap } from 'gsap'
+import { InertiaPlugin } from 'gsap/InertiaPlugin'
+import { PixiPlugin } from 'gsap/PixiPlugin'
+import { Application, Graphics } from 'pixi.js'
 
-// Create a new application
+gsap.registerPlugin(InertiaPlugin, PixiPlugin)
+
+// 创建一个新的应用程序
 const app = new Application()
 
 const containerElement = document.getElementById('app')!
 
-// Initialize the application
+// 初始化应用程序
 await app.init({
   resizeTo: containerElement,
   preference: 'webgpu',
 })
-const { stage, ticker, canvas } = app
+const { stage, canvas, screen } = app
 
-// Append the application canvas to the document body
+canvas.style.userSelect = 'none'
+
+// 将应用程序画布添加到文档中
 containerElement.appendChild(canvas)
 
-// Create and add a container to the stage
-const container = new Container()
+// 创建一个正方形图形
+const square = new Graphics()
+square.rect(0, 0, 100, 100)
+square.fill(0x3366FF)
 
-stage.addChild(container)
+// 将正方形定位在屏幕中心
+square.x = (screen.width - 100) / 2
+square.y = (screen.height - 100) / 2
 
-// Load the bunny texture
-const texture = await Assets.load('https://pixijs.com/assets/bunny.png')
+// 使正方形可交互
+square.eventMode = 'static'
 
-// Create a 5x5 grid of bunnies in the container
-for (let i = 0; i < 25; i++) {
-  const bunny = new Sprite(texture)
+// 将正方形添加到舞台
+stage.addChild(square)
 
-  bunny.x = (i % 5) * 40
-  bunny.y = Math.floor(i / 5) * 40
-  container.addChild(bunny)
-}
+InertiaPlugin.track(square, 'x,y')
 
-// Move the container to the center
-container.x = app.screen.width / 2
-container.y = app.screen.height / 2
+// 处理鼠标按下事件
+square.on('pointerdown', (event) => {
+  const state = {
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+    squareX: square.x,
+    squareY: square.y,
+  }
 
-// Center the bunny sprites in local container coordinates
-container.pivot.x = container.width / 2
-container.pivot.y = container.height / 2
+  const xTo = gsap.quickTo(square, 'x', { duration: 0.1, ease: 'power4' })
+  const yTo = gsap.quickTo(square, 'y', { duration: 0.1, ease: 'power4' })
 
-// Listen for animate update
-ticker.add((time) => {
-  // Continuously rotate the container!
-  // * use delta to create frame-independent transform *
-  container.rotation -= 0.01 * time.deltaTime
+  const handlePointerMove = (event: PointerEvent) => {
+    xTo(state.squareX + (event.clientX - state.pointerX))
+    yTo(state.squareY + (event.clientY - state.pointerY))
+  }
+
+  const handlePointerUp = () => {
+    removeEventListener('pointermove', handlePointerMove)
+    removeEventListener('pointerup', handlePointerUp)
+    gsap.to(square, {
+      inertia: {
+        duration: 0.5,
+        x: {
+          velocity: 'auto',
+          min: 0,
+          max: screen.width - square.width,
+        },
+        y: {
+          velocity: 'auto',
+          min: 0,
+          max: screen.height - square.height,
+        },
+      },
+    })
+  }
+
+  addEventListener('pointermove', handlePointerMove)
+  addEventListener('pointerup', handlePointerUp)
 })
