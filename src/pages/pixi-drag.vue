@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Application, Container, Graphics, Text } from 'pixi.js'
 import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
-import { useDraggable } from '@/tools/drag'
+import { Draggable } from '@/tools/drag'
 
 const resizeTo = useTemplateRef('canvas-container')
 
 const app = shallowRef<Application>()
+const draggableInstance = shallowRef<Draggable>()
 
 onMounted(async () => {
   if (!resizeTo.value)
@@ -62,9 +63,9 @@ onMounted(async () => {
   // 将容器添加到舞台
   stage.addChild(container)
 
-  // 使用 createDragger 使容器可拖拽
-  useDraggable({
-    element: container,
+  // 创建可拖拽实例
+  draggableInstance.value = new Draggable({
+    container,
     xRange: [0, screen.width - 100],
     yRange: [0, screen.height - 100],
     enableCursor: true,
@@ -72,8 +73,10 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  if (app.value)
-    app.value.destroy()
+  // 销毁拖拽功能
+  draggableInstance.value?.destroy()
+  // 销毁应用
+  app.value?.destroy()
 })
 </script>
 

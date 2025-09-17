@@ -6,9 +6,9 @@ import { PixiPlugin } from 'gsap/PixiPlugin'
 /**
  * 拖拽配置选项
  */
-export interface CreateDraggerOptions {
+export interface DraggableOptions {
   /** 要拖拽的PIXI容器元素 */
-  element: Container
+  container: Container
   /** X轴拖拽范围，格式为[最小值, 最大值] */
   xRange?: [number, number]
   /** Y轴拖拽范围，格式为[最小值, 最大值] */
@@ -18,30 +18,42 @@ export interface CreateDraggerOptions {
 }
 
 /**
- * 创建拖拽功能
- * @param options - 拖拽配置选项
- * @returns 清理函数，用于移除拖拽功能
+ * 拖拽功能类
+ * 提供元素拖拽功能，支持边界限制和惯性效果
  */
-export function useDraggable(options: CreateDraggerOptions) {
-  const { element, enableCursor = false } = options
-  element.eventMode = 'static'
+export class Draggable {
+  /**
+   * 构造函数
+   * @param options - 拖拽配置选项
+   */
+  constructor(
+    public options: DraggableOptions,
+  ) {
+    const { container: element } = options
+    element.eventMode = 'static'
 
-  // 根据配置设置光标，默认关闭抓握手型
-  if (enableCursor)
-    element.cursor = 'grab'
+    // 根据配置设置光标，默认关闭抓握手型
+    if (options.enableCursor)
+      element.cursor = 'grab'
 
-  // 注册GSAP插件
-  gsap.registerPlugin(InertiaPlugin, PixiPlugin)
-  // 启用元素的惯性跟踪
-  InertiaPlugin.track(element, 'x,y')
+    // 注册GSAP插件
+    gsap.registerPlugin(InertiaPlugin, PixiPlugin)
+    // 启用元素的惯性跟踪
+    InertiaPlugin.track(element, 'x,y')
+
+    // 注册元素指针按下事件
+    element.on('pointerdown', this.handlePointerDown)
+  }
 
   /**
-   * 处理指针按下事件
-   * @param event -  federated pointer事件
+   * 创建指针按下事件处理器
    */
-  const handlePointerDown = (event: FederatedPointerEvent) => {
+  private handlePointerDown(event: FederatedPointerEvent) {
+    const { options } = this
+    const { container: element } = options
+
     // 如果启用了光标，按下时设置为抓取状态
-    if (enableCursor)
+    if (options.enableCursor)
       element.cursor = 'grabbing'
 
     const state = {
@@ -57,7 +69,6 @@ export function useDraggable(options: CreateDraggerOptions) {
 
     /**
      * 处理指针移动事件
-     * @param event - 指针事件
      */
     const handlePointerMove = (event: PointerEvent) => {
       // 计算相对位移并应用到元素位置
@@ -70,7 +81,7 @@ export function useDraggable(options: CreateDraggerOptions) {
      */
     const handlePointerUp = () => {
       // 如果启用了光标，释放时恢复为抓握手型
-      if (enableCursor)
+      if (options.enableCursor)
         element.cursor = 'grab'
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
@@ -102,16 +113,16 @@ export function useDraggable(options: CreateDraggerOptions) {
     document.addEventListener('pointerup', handlePointerUp)
   }
 
-  // 注册元素指针按下事件
-  element.on('pointerdown', handlePointerDown)
-
   /**
-   * 清理函数 - 移除事件监听并恢复元素状态
+   * 销毁拖拽功能
+   * 移除事件监听并恢复元素状态
    */
-  return () => {
-    element.off('pointerdown', handlePointerDown)
+  public destroy() {
+    const { options } = this
+    const { container: element } = options
+    element.off('pointerdown', this.handlePointerDown)
     // 如果启用了光标，清理时恢复默认光标
-    if (enableCursor)
+    if (options.enableCursor)
       element.cursor = 'auto'
   }
 }
