@@ -78,12 +78,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="canvas-container" class="canvas-container" />
+  <div ref="canvas-container" class="h-full w-full overflow-hidden" />
 </template>
-
-<style scoped>
-.canvas-container {
-  height: 100vh;
-  overflow: hidden;
-}
-</style>

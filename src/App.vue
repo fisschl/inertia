@@ -5,3 +5,14 @@ import AppLayout from '@/components/AppLayout.vue'
 <template>
   <AppLayout />
 </template>
+
+<style>
+html {
+  color-scheme: light dark;
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+</style>
