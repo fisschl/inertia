@@ -1,109 +1,130 @@
-# Inertia
+# Inertia - 带惯性效果的拖拽演示应用
 
-一个用于在n维空间中模拟惯性与摩擦力的TypeScript库。
+这是一个基于Vue 3、TypeScript、Pixi.js和GSAP的前端应用程序，展示了带有物理惯性效果的拖拽功能。
+
+## 技术栈
+
+- **前端框架**: Vue 3
+- **编程语言**: TypeScript
+- **构建工具**: Vite
+- **样式系统**: Tailwind CSS
+- **图形库**: Pixi.js
+- **动画库**: GSAP (GreenSock Animation Platform)
+- **图标库**: Lucide Vue Next
 
 ## 功能特性
 
-- 支持任意维度（1D, 2D, 3D等）
-- 位置和速度跟踪
-- 摩擦力模拟
-- 冲量应用
-- 静止检测
+- 使用Pixi.js创建高性能图形渲染
+- 实现带有物理惯性效果的拖拽交互
+- 支持设置拖拽边界范围
+- 响应式设计，适配不同屏幕尺寸
+- 支持浅色/深色模式
+- 现代化UI设计，使用Tailwind CSS
 
-## 安装
+## 项目结构
+
+```
+src/
+├── App.vue              # 应用入口组件
+├── components/
+│   └── AppLayout.vue    # 应用布局组件
+├── main.ts              # 应用入口文件
+├── pages/
+│   ├── index.vue        # 首页
+│   └── pixi-drag.vue    # Pixi.js拖拽示例
+├── style.css            # 全局样式
+└── tools/
+    └── drag.ts          # 拖拽功能实现
+```
+
+## 快速开始
+
+### 安装依赖
 
 ```bash
-npm install inertia
+# 使用bun安装依赖
+bun install
+
+# 或者使用npm
+npm install
+
+# 或者使用yarn
+yarn install
 ```
 
-## 使用方法
-
-### 基本示例
-
-```typescript
-import { Inertia } from 'inertia'
-
-// 在位置(0, 0)创建一个2D物体，摩擦系数为0.9
-const object = new Inertia([0, 0], 0.9)
-
-// 设置初始速度
-object.setVelocity([10, 5])
-
-// 随时间应用更新
-object.update(1) // 1秒后更新
-console.log(object.position) // [10, 5]
-console.log(object.velocity) // [9, 4.5] (因摩擦力而减小)
-
-// 应用冲量
-object.applyImpulse([2, 1])
-console.log(object.velocity) // [11, 5.5]
-
-// 检查物体是否静止
-if (object.isAtRest()) {
-  console.log('物体已停止移动')
-}
-```
-
-### 1D示例
-
-```typescript
-import { Inertia } from 'inertia'
-
-// 创建一个1D物体
-const object1D = new Inertia([5], 0.8)
-object1D.setVelocity([3])
-
-object1D.update(1)
-console.log(object1D.position) // [8]
-console.log(object1D.velocity) // [2.4]
-```
-
-### 3D示例
-
-```typescript
-import { Inertia } from 'inertia'
-
-// 创建一个3D物体
-const object3D = new Inertia([0, 0, 0], 0.95)
-object3D.applyImpulse([10, 0, 5])
-
-object3D.update(0.5)
-console.log(object3D.position) // [5, 0, 2.5]
-console.log(object3D.velocity) // [9.75, 0, 4.875]
-```
-
-## API
-
-### 构造函数
-
-`new Inertia(initialPosition: number[], friction: number)`
-
-- `initialPosition`: 表示n维空间中初始位置的数字数组
-- `friction`: 0到1之间的摩擦系数（0 = 立即停止, 1 = 无摩擦）
-
-### 属性
-
-- `position`: 当前位置，作为数字数组
-- `velocity`: 当前速度，作为数字数组
-- `frictionCoefficient`: 摩擦系数
-- `speed`: 速度向量的大小
-- `dimensions`: 维度数量
-
-### 方法
-
-- `update(deltaTime: number)`: 更新位置并为给定时间间隔应用摩擦力
-- `applyImpulse(impulse: number[])`: 应用冲量以改变速度
-- `setVelocity(velocity: number[])`: 直接设置速度
-- `isAtRest()`: 检查物体是否静止（不移动）
-
-## 测试
-
-运行测试：
+### 开发模式
 
 ```bash
-bun test
+bun run dev
+# 或
+npm run dev
+# 或
+yarn dev
 ```
+
+这将启动开发服务器，通常可以在 http://localhost:5173 访问。
+
+### 构建项目
+
+```bash
+bun run build
+# 或
+npm run build
+# 或
+yarn build
+```
+
+这将在`dist`目录中生成生产版本的应用程序。
+
+### 代码检查
+
+```bash
+bun run lint
+# 或
+npm run lint
+# 或
+yarn lint
+```
+
+## 拖拽功能说明
+
+项目中的拖拽功能主要通过`useDraggable`函数实现，该函数位于`src/tools/drag.ts`文件中。它利用GSAP的InertiaPlugin来实现平滑的惯性效果。
+
+### 主要功能参数
+
+- `element`: 要拖拽的Pixi容器元素
+- `xRange`: X轴拖拽范围，格式为[最小值, 最大值]
+- `yRange`: Y轴拖拽范围，格式为[最小值, 最大值]
+- `enableCursor`: 是否启用抓握手型光标
+
+### 示例用法
+
+```typescript
+import { useDraggable } from '@/tools/drag'
+
+// 使容器可拖拽
+useDraggable({
+  element: container, // Pixi容器
+  xRange: [0, screen.width - 100], // X轴边界
+  yRange: [0, screen.height - 100], // Y轴边界
+  enableCursor: true, // 启用抓握手型光标
+})
+```
+
+## 页面说明
+
+- **首页**: 应用的入口页面
+- **Pixi.js拖拽示例**: 展示了带有惯性效果的正方形拖拽交互
+
+## 样式系统
+
+项目使用Tailwind CSS作为样式系统，支持浅色和深色模式。背景色使用neutral系列，文字颜色使用gray系列，确保良好的可读性和视觉体验。
+
+## 配置说明
+
+- VSCode配置: 已配置Tailwind CSS智能提示支持，包括active-class属性
+- ESLint配置: 使用@antfu/eslint-config进行代码风格检查
 
 ## 许可证
 
-MIT
+MIT License
