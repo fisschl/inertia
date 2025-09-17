@@ -14,7 +14,7 @@ export interface DraggableOptions {
   /** Y轴拖拽范围，格式为[最小值, 最大值] */
   yRange?: [number, number]
   /** 是否启用抓握手型光标，默认关闭 */
-  enableCursor?: boolean
+  dragCursor?: boolean
 }
 
 /**
@@ -33,7 +33,7 @@ export class Draggable {
     element.eventMode = 'static'
 
     // 根据配置设置光标，默认关闭抓握手型
-    if (options.enableCursor)
+    if (options.dragCursor)
       element.cursor = 'grab'
 
     // 注册GSAP插件
@@ -53,7 +53,7 @@ export class Draggable {
     const { container: element } = options
 
     // 如果启用了光标，按下时设置为抓取状态
-    if (options.enableCursor)
+    if (options.dragCursor)
       element.cursor = 'grabbing'
 
     const state = {
@@ -81,7 +81,7 @@ export class Draggable {
      */
     const handlePointerUp = () => {
       // 如果启用了光标，释放时恢复为抓握手型
-      if (options.enableCursor)
+      if (options.dragCursor)
         element.cursor = 'grab'
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
@@ -122,7 +122,7 @@ export class Draggable {
     const { container: element } = options
     element.off('pointerdown', this.handlePointerDown)
     // 如果启用了光标，清理时恢复默认光标
-    if (options.enableCursor)
+    if (options.dragCursor)
       element.cursor = 'auto'
   }
 }

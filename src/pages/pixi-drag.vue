@@ -68,7 +68,7 @@ onMounted(async () => {
     container,
     xRange: [0, screen.width - 100],
     yRange: [0, screen.height - 100],
-    enableCursor: true,
+    dragCursor: true,
   })
 })
 
