@@ -5,6 +5,7 @@ export default antfu(
   {
     rules: {
       'no-console': 'off',
+      'antfu/no-top-level-await': 'off',
     },
   },
 )
