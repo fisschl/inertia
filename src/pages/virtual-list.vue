@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { useEventListener, useScroll, useWindowSize } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { useElementSize } from '@vueuse/core'
+import { computed, ref } from 'vue'
+import { useVirtualList } from '../tools/virtual'
 
 // 定义列表项数据结构
 interface ListItem {
   id: number
   title: string
   description: string
+  height: number // 存储项目高度
 }
 
 // 配置项
-const ITEM_HEIGHT = 80 // 每个列表项的高度
-const BUFFER_SIZE = 5 // 缓冲区大小，额外渲染的项目数量
+const ITEM_HEIGHT = 80 // 默认列表项高度
 
 // 响应式数据
 const listContainer = ref<HTMLDivElement | null>(null)
 const items = ref<ListItem[]>([])
-const containerHeight = ref(500) // 容器高度
-const scrollTop = ref(0)
 
-// 使用 VueUse hooks
-const { height } = useWindowSize()
-const scrollData = useScroll(listContainer)
+// 使用 VueUse 测量容器高度
+const { height: containerHeight } = useElementSize(listContainer)
 
-// 监听滚动数据变化，更新scrollTop
-watch(() => scrollData.y.value, (newValue) => {
-  scrollTop.value = newValue
+// 使用自定义虚拟列表
+const virtualList = useVirtualList({
+  itemSize: index => items.value[index]?.height || ITEM_HEIGHT, // 使用动态项目高度
+  length: computed(() => items.value.length),
+  windowSize: computed(() => containerHeight.value || 500), // 使用动态容器高度
 })
 
 // 初始化数据
@@ -34,6 +34,7 @@ function initItems(count: number) {
     id: index + 1,
     title: `列表项 #${index + 1}`,
     description: `这是第 ${index + 1} 个列表项的详细描述信息。虚拟列表可以高效渲染大量数据。`,
+    height: Math.floor(Math.random() * 60) + 60, // 随机高度：60-120px
   }))
 }
 
@@ -41,113 +42,119 @@ function initItems(count: number) {
 function setItemCount(count: number) {
   initItems(count)
   // 重置滚动位置
-  if (listContainer.value) {
-    listContainer.value.scrollTop = 0
-    scrollTop.value = 0
-  }
+  virtualList.scrollTo(0)
 }
 
-// 计算总高度
-const totalHeight = computed(() => items.value.length * ITEM_HEIGHT)
+// 处理鼠标滚轮事件
+function handleWheel(event: WheelEvent) {
+  event.preventDefault()
 
-// 计算可见项的起始索引
-const startIndex = computed(() => {
-  const index = Math.floor(scrollTop.value / ITEM_HEIGHT) - BUFFER_SIZE
-  return Math.max(0, index)
-})
-
-// 计算可见项的结束索引
-const endIndex = computed(() => {
-  const visibleCount = Math.ceil(containerHeight.value / ITEM_HEIGHT)
-  const index = startIndex.value + visibleCount + BUFFER_SIZE * 2
-  return Math.min(items.value.length, index)
-})
-
-// 计算偏移量
-const offsetY = computed(() => startIndex.value * ITEM_HEIGHT)
+  const delta = event.deltaY
+  // 直接修改 windowStart，useVirtualList.scrollTo() 内部会处理范围限制
+  virtualList.scrollTo(virtualList.windowStart + delta)
+}
 
 // 计算可见项列表
 const visibleItems = computed(() => {
-  return items.value.slice(startIndex.value, endIndex.value)
+  return virtualList.items.map(v => ({
+    ...v,
+    data: items.value[v.index]!,
+  }))
 })
-
-// 设置容器高度
-function setContainerHeight(height: number) {
-  if (listContainer.value) {
-    listContainer.value.style.height = `${height}px`
-  }
-}
-
-// 监听窗口大小变化，调整容器高度
-function handleResize() {
-  // 保持容器高度为视口高度的60%
-  const newHeight = height.value * 0.6
-  const clampedHeight = Math.max(400, Math.min(800, newHeight))
-  containerHeight.value = clampedHeight
-  setContainerHeight(clampedHeight)
-}
-
-// 使用 VueUse 的 useEventListener 替代手动的事件监听
-useEventListener('resize', handleResize)
 
 // 初始化数据
 initItems(10000)
-handleResize()
 </script>
 
 <template>
-  <div class="p-5 max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">
-      虚拟列表示例
-    </h1>
+  <div class="p-6 w-full h-screen flex flex-col">
+    <!-- 控制面板 -->
+    <div class="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm border border-neutral-200 dark:border-neutral-700 mb-4">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            渲染: {{ visibleItems.length }} / {{ items.length }} 项
+          </p>
+        </div>
 
-    <div class="flex items-center mb-4">
-      <button class="px-4 py-2 bg-emerald-500 text-white rounded-md cursor-pointer hover:bg-emerald-600 transition-colors mr-2" @click="setItemCount(1000)">
-        1000 条数据
-      </button>
-      <button class="px-4 py-2 bg-emerald-500 text-white rounded-md cursor-pointer hover:bg-emerald-600 transition-colors mr-2" @click="setItemCount(10000)">
-        10000 条数据
-      </button>
-      <button class="px-4 py-2 bg-emerald-500 text-white rounded-md cursor-pointer hover:bg-emerald-600 transition-colors" @click="setItemCount(100000)">
-        100000 条数据
-      </button>
-      <span class="ml-4 text-gray-500">当前渲染: {{ visibleItems.length }} / {{ items.length }} 项</span>
-    </div>
+        <div class="flex gap-2">
+          <button
+            v-for="count in [1000, 10000, 100000]"
+            :key="count"
+            class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white rounded text-sm transition-colors"
+            @click="setItemCount(count)"
+          >
+            {{ count.toLocaleString() }}
+          </button>
+        </div>
+      </div>
 
-    <div
-      ref="listContainer"
-      class="relative w-full overflow-y-auto border border-gray-200 rounded-md bg-white"
-    >
-      <!-- 占位元素，保持滚动条高度 -->
-      <div
-        class="absolute top-0 left-0 right-0"
-        :style="{ height: `${totalHeight}px` }"
-      />
-
-      <!-- 可视区域内容 -->
-      <div
-        class="absolute top-0 left-0 right-0 w-full"
-        :style="{ transform: `translateY(${offsetY}px)` }"
-      >
-        <div
-          v-for="item in visibleItems"
-          :key="item.id"
-          class="flex items-center h-20 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
-          :class="{ 'bg-gray-50': item.id % 2 === 0 }"
-        >
-          <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-emerald-500 text-white rounded-full font-bold mr-4">
-            {{ item.id }}
+      <div class="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+        <div class="flex gap-4 text-xs">
+          <div class="text-neutral-500 dark:text-neutral-400">
+            <span class="font-medium">项目:</span> {{ ITEM_HEIGHT }}px
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold mb-1 overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ item.title }}
-            </div>
-            <div class="text-gray-500 text-sm overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ item.description }}
-            </div>
+          <div class="text-neutral-500 dark:text-neutral-400">
+            <span class="font-medium">窗口:</span> {{ Math.round(containerHeight) }}px
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 虚拟列表容器 -->
+    <div class="flex-1 bg-white dark:bg-neutral-800 rounded shadow border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+      <div
+        ref="listContainer"
+        class="relative w-full h-full overflow-hidden"
+        @wheel="handleWheel"
+      >
+        <!-- 可视区域内容 -->
+        <div
+          class="absolute top-0 left-0 right-0 w-full"
+          :style="{ top: `-${virtualList.windowStart}px`, height: `${virtualList.contentHeight}px` }"
+        >
+          <div
+            v-for="item in visibleItems"
+            :key="item.data.id"
+            class="flex absolute items-center p-3 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0 group hover:bg-neutral-100 dark:hover:bg-neutral-700 w-full"
+            :style="{ height: `${item.height}px`, top: `${item.top}px` }"
+          >
+            <!-- 序号徽章 -->
+            <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-emerald-600 text-white rounded-full text-xs font-medium mr-3">
+              {{ item.data.id }}
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-neutral-900 dark:text-neutral-100 mb-0.5 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                {{ item.data.title }}
+              </div>
+              <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                {{ item.data.description }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 滚动指示器 -->
+        <div class="absolute bottom-3 right-3 bg-black/80 dark:bg-white/90 text-white dark:text-neutral-900 px-2 py-1 rounded text-xs font-medium">
+          {{ Math.round(virtualList.windowStart) }} / {{ Math.round(virtualList.contentHeight - containerHeight) }}
+        </div>
+
+        <!-- 滚动提示 -->
+        <div v-if="items.length > 0 && virtualList.windowStart === 0" class="absolute bottom-3 left-3 bg-black/80 dark:bg-white/90 text-white dark:text-neutral-900 px-2 py-1 rounded text-xs font-medium animate-pulse">
+          🖱️ 滚轮滚动
+        </div>
+      </div>
+    </div>
+
+    <!-- 状态信息 -->
+    <div class="mt-4 text-center">
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+        总高: {{ Math.round(virtualList.contentHeight) }}px •
+        可见: {{ visibleItems.length }} •
+        比例: {{ ((visibleItems.length / items.length) * 100).toFixed(1) }}%
+      </p>
     </div>
   </div>
 </template>

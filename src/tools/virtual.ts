@@ -31,6 +31,28 @@ export interface VirtualListOptions {
 }
 
 /**
+ * 虚拟列表项目信息接口
+ *
+ * 该接口定义了虚拟列表中每个可见项目的完整信息
+ */
+export interface VirtualListItem {
+  /**
+   * 项目在原始列表中的索引位置
+   */
+  index: number
+
+  /**
+   * 项目的高度（像素）
+   */
+  height: number
+
+  /**
+   * 项目的顶部偏移量（像素）
+   */
+  top: number
+}
+
+/**
  * 创建一个高性能的虚拟列表工具
  *
  * 虚拟列表是一种优化大量数据渲染的技术，它只渲染可视区域内的项目，而不是全部数据
@@ -109,18 +131,29 @@ export function useVirtualList(options: VirtualListOptions) {
      * @param start 要滚动到的起始位置（顶部偏移量）
      */
     scrollTo: (start: number) => {
-      windowStart.value = start
+      const maxValue = Math.max(0, instance.contentHeight - toValue(options.windowSize))
+      windowStart.value = Math.max(0, Math.min(maxValue, start))
     },
 
     /**
-     * 当前可视窗口中可见的项目索引数组
+     * 当前可视窗口中可见的项目信息对象数组
      * 这是一个计算属性，当windowStart或windowSize变化时会自动更新
      * 使用二分查找算法高效确定可见项目范围
      */
     items: computed(() => {
       const start = findClosestLessOrEqual({ list: cache.value, target: windowStart.value })
       const end = findClosestLessOrEqual({ list: cache.value, target: windowEnd.value, left: start })
-      return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+
+      return range(start, end + 1).map((index) => {
+        const top = cache.value[index] || 0
+        const height = options.itemSize(index)
+        const item: VirtualListItem = {
+          index,
+          height,
+          top,
+        }
+        return item
+      })
     }),
   })
 
@@ -220,4 +253,31 @@ function findClosestLessOrEqual(options: FindClosestLessOrEqualOptions): number 
 
   // 返回最终找到的结果索引（可能为 -1，表示所有元素都大于目标值）
   return result
+}
+
+/**
+ * 生成一个左闭右开的连续数字数组
+ *
+ * @param start 起始值（包含）
+ * @param end 结束值（不包含）
+ * @returns 生成的连续数字数组
+ *
+ * @example
+ * // 返回 [0, 1, 2, 3, 4]
+ * range(0, 5)
+ *
+ * @example
+ * // 返回 [5, 6, 7, 8, 9]
+ * range(5, 10)
+ *
+ * @example
+ * // 返回 []
+ * range(5, 5)
+ */
+export function range(start: number, end: number): number[] {
+  if (start >= end) {
+    return []
+  }
+
+  return Array.from({ length: end - start }, (_, i) => start + i)
 }
