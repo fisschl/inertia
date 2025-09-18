@@ -1,12 +1,58 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, reactive, ref, toValue } from 'vue'
 
+/**
+ * 虚拟列表配置选项接口
+ *
+ * 该接口定义了创建高性能虚拟列表所需的配置参数，用于优化大量数据的渲染
+ */
 export interface VirtualListOptions {
+  /**
+   * 计算指定索引项目高度的函数
+   *
+   * @param index 项目的索引
+   * @returns 项目的高度值
+   */
   itemSize: (index: number) => number
+
+  /**
+   * 列表的总项目数
+   *
+   * 可以是普通数值或Vue的响应式引用（ref/computed）
+   */
   length: MaybeRefOrGetter<number>
+
+  /**
+   * 可视窗口的大小
+   *
+   * 表示一次能够显示的项目数量，同样可以是普通数值或Vue的响应式引用
+   */
   windowSize: MaybeRefOrGetter<number>
 }
 
+/**
+ * 创建一个高性能的虚拟列表工具
+ *
+ * 虚拟列表是一种优化大量数据渲染的技术，它只渲染可视区域内的项目，而不是全部数据
+ * 该函数提供了管理虚拟列表所需的全部状态和方法
+ *
+ * @param options 虚拟列表配置选项
+ * @returns 包含虚拟列表状态和方法的响应式对象
+ *
+ * @example
+ * // 创建一个简单的虚拟列表实例
+ * const virtualList = useVirtualList({
+ *   itemSize: (index) => 80, // 每个项目高度80px
+ *   length: 10000,          // 总共有10000个项目
+ *   windowSize: 500         // 可视窗口高度500px
+ * });
+ *
+ * // 滚动到指定位置
+ * virtualList.scrollTo(200);
+ *
+ * // 获取当前可见的项目索引
+ * const visibleItemIndices = virtualList.items.value;
+ */
 export function useVirtualList(options: VirtualListOptions) {
   /**
    * 记录每个元素的起始位置
@@ -31,19 +77,49 @@ export function useVirtualList(options: VirtualListOptions) {
   })
 
   const instance = reactive({
+    /**
+     * 缓存每个项目的起始位置（顶部偏移量）
+     * 这是一个计算属性，当项目数量或项目大小变化时会自动更新
+     */
     cache,
+
+    /**
+     * 当前可视窗口的起始位置（顶部偏移量）
+     * 通过修改此值可以控制列表的滚动位置
+     */
     windowStart,
+
+    /**
+     * 当前可视窗口的结束位置（底部偏移量）
+     * 这是一个计算属性，由windowStart和windowSize自动计算得出
+     */
     windowEnd,
+
+    /**
+     * 整个列表的总高度
+     * 这是一个计算属性，通过最后一个项目的位置和高度计算得出
+     */
     contentHeight: computed(() => {
       const index = toValue(options.length) - 1
       return (cache.value[index] ?? 0) + options.itemSize(index)
     }),
+
+    /**
+     * 滚动到指定的位置
+     * @param start 要滚动到的起始位置（顶部偏移量）
+     */
     scrollTo: (start: number) => {
       windowStart.value = start
     },
+
+    /**
+     * 当前可视窗口中可见的项目索引数组
+     * 这是一个计算属性，当windowStart或windowSize变化时会自动更新
+     * 使用二分查找算法高效确定可见项目范围
+     */
     items: computed(() => {
       const start = findClosestLessOrEqual({ list: cache.value, target: windowStart.value })
-      const end = findClosestLessOrEqual({ list: cache.value, target: windowEnd.value })
+      const end = findClosestLessOrEqual({ list: cache.value, target: windowEnd.value, left: start })
       return Array.from({ length: end - start + 1 }, (_, i) => start + i)
     }),
   })
