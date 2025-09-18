@@ -13,116 +13,80 @@ export interface DraggableOptions {
   xRange?: [number, number]
   /** Y轴拖拽范围，格式为[最小值, 最大值] */
   yRange?: [number, number]
-  /** 是否启用抓握手型光标，默认关闭 */
-  dragCursor?: boolean
 }
 
-/**
- * 拖拽功能类
- * 提供元素拖拽功能，支持边界限制和惯性效果
- */
-export class Draggable {
-  /**
-   * 构造函数
-   * @param options - 拖拽配置选项
-   */
-  constructor(
-    public options: DraggableOptions,
-  ) {
-    const { container: element } = options
-    element.eventMode = 'static'
+export function createDraggable(options: DraggableOptions) {
+  const draggable = {
+    ...options,
+    handlePointerDown(event: FederatedPointerEvent) {
+      const { container } = draggable
 
-    // 根据配置设置光标，默认关闭抓握手型
-    if (options.dragCursor)
-      element.cursor = 'grab'
+      // 注册GSAP插件
+      gsap.registerPlugin(InertiaPlugin, PixiPlugin)
+      // 启用元素的惯性跟踪
+      InertiaPlugin.track(container, 'x,y')
 
-    // 注册GSAP插件
-    gsap.registerPlugin(InertiaPlugin, PixiPlugin)
-    // 启用元素的惯性跟踪
-    InertiaPlugin.track(element, 'x,y')
+      const state = {
+        pointerX: event.clientX,
+        pointerY: event.clientY,
+        eleX: container.x,
+        eleY: container.y,
+      }
 
-    // 注册元素指针按下事件
-    element.on('pointerdown', this.handlePointerDown)
-  }
+      // 创建快速移动动画函数
+      const xTo = gsap.quickTo(container, 'x', { duration: 0.1, ease: 'power4' })
+      const yTo = gsap.quickTo(container, 'y', { duration: 0.1, ease: 'power4' })
 
-  /**
-   * 创建指针按下事件处理器
-   */
-  private handlePointerDown(event: FederatedPointerEvent) {
-    const { options } = this
-    const { container: element } = options
-
-    // 如果启用了光标，按下时设置为抓取状态
-    if (options.dragCursor)
-      element.cursor = 'grabbing'
-
-    const state = {
-      pointerX: event.clientX,
-      pointerY: event.clientY,
-      eleX: element.x,
-      eleY: element.y,
-    }
-
-    // 创建快速移动动画函数
-    const xTo = gsap.quickTo(element, 'x', { duration: 0.1, ease: 'power4' })
-    const yTo = gsap.quickTo(element, 'y', { duration: 0.1, ease: 'power4' })
-
-    /**
-     * 处理指针移动事件
-     */
-    const handlePointerMove = (event: PointerEvent) => {
+      /**
+       * 处理指针移动事件
+       */
+      const handlePointerMove = (event: PointerEvent) => {
       // 计算相对位移并应用到元素位置
-      xTo(state.eleX + (event.clientX - state.pointerX))
-      yTo(state.eleY + (event.clientY - state.pointerY))
-    }
+        xTo(state.eleX + (event.clientX - state.pointerX))
+        yTo(state.eleY + (event.clientY - state.pointerY))
+      }
 
-    /**
-     * 处理指针释放事件
-     */
-    const handlePointerUp = () => {
-      // 如果启用了光标，释放时恢复为抓握手型
-      if (options.dragCursor)
-        element.cursor = 'grab'
-      document.removeEventListener('pointermove', handlePointerMove)
-      document.removeEventListener('pointerup', handlePointerUp)
+      /**
+       * 处理指针释放事件
+       */
+      const handlePointerUp = () => {
+        document.removeEventListener('pointermove', handlePointerMove)
+        document.removeEventListener('pointerup', handlePointerUp)
 
-      // 解构获取边界范围
-      const [minX, maxX] = options.xRange ?? []
-      const [minY, maxY] = options.yRange ?? []
+        // 解构获取边界范围
+        const [minX, maxX] = options.xRange ?? []
+        const [minY, maxY] = options.yRange ?? []
 
-      // 应用惯性动画效果
-      gsap.to(element, {
-        inertia: {
-          duration: 0.35,
-          x: {
-            velocity: 'auto',
-            min: minX,
-            max: maxX,
+        // 应用惯性动画效果
+        gsap.to(container, {
+          inertia: {
+            duration: 0.35,
+            x: {
+              velocity: 'auto',
+              min: minX,
+              max: maxX,
+            },
+            y: {
+              velocity: 'auto',
+              min: minY,
+              max: maxY,
+            },
           },
-          y: {
-            velocity: 'auto',
-            min: minY,
-            max: maxY,
-          },
-        },
-      })
-    }
+        })
+      }
 
-    // 注册事件监听器
-    document.addEventListener('pointermove', handlePointerMove)
-    document.addEventListener('pointerup', handlePointerUp)
+      // 注册事件监听器
+      document.addEventListener('pointermove', handlePointerMove)
+      document.addEventListener('pointerup', handlePointerUp)
+    },
+    destroy() {
+      const { container } = draggable
+      container.off('pointerdown', draggable.handlePointerDown)
+    },
   }
-
-  /**
-   * 销毁拖拽功能
-   * 移除事件监听并恢复元素状态
-   */
-  public destroy() {
-    const { options } = this
-    const { container: element } = options
-    element.off('pointerdown', this.handlePointerDown)
-    // 如果启用了光标，清理时恢复默认光标
-    if (options.dragCursor)
-      element.cursor = 'auto'
-  }
+  const { container } = draggable
+  container.on('pointerdown', draggable.handlePointerDown)
+  return draggable
 }
+
+export type DraggableInstance = ReturnType<typeof createDraggable>

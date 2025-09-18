@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import type { DraggableInstance } from '@/tools/drag'
 import { Application, Container, Graphics, Text } from 'pixi.js'
 import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
-import { Draggable } from '@/tools/drag'
+import { createDraggable } from '@/tools/drag'
 
 const resizeTo = useTemplateRef('canvas-container')
 
 const app = shallowRef<Application>()
-const draggableInstance = shallowRef<Draggable>()
+const draggable = shallowRef<DraggableInstance>()
 
 onMounted(async () => {
   if (!resizeTo.value)
@@ -31,7 +32,11 @@ onMounted(async () => {
   resizeTo.value.appendChild(canvas)
 
   // 创建一个容器来包含正方形和文字
-  const container = new Container()
+  const container = new Container({
+    x: (screen.width - 100) / 2,
+    y: (screen.height - 100) / 2,
+    eventMode: 'static',
+  })
 
   // 创建一个正方形图形
   const square = new Graphics()
@@ -56,25 +61,20 @@ onMounted(async () => {
   container.addChild(square)
   container.addChild(text)
 
-  // 将容器定位在屏幕中心
-  container.x = (screen.width - 100) / 2
-  container.y = (screen.height - 100) / 2
-
   // 将容器添加到舞台
   stage.addChild(container)
 
   // 创建可拖拽实例
-  draggableInstance.value = new Draggable({
+  draggable.value = createDraggable({
     container,
     xRange: [0, screen.width - 100],
     yRange: [0, screen.height - 100],
-    dragCursor: true,
   })
 })
 
 onBeforeUnmount(() => {
   // 销毁拖拽功能
-  draggableInstance.value?.destroy()
+  draggable.value?.destroy()
   // 销毁应用
   app.value?.destroy()
 })
