@@ -31,28 +31,6 @@ export interface VirtualListOptions {
 }
 
 /**
- * 虚拟列表项目信息接口
- *
- * 该接口定义了虚拟列表中每个可见项目的完整信息
- */
-export interface VirtualListItem {
-  /**
-   * 项目在原始列表中的索引位置
-   */
-  index: number
-
-  /**
-   * 项目的高度（像素）
-   */
-  height: number
-
-  /**
-   * 项目的顶部偏移量（像素）
-   */
-  top: number
-}
-
-/**
  * 创建一个高性能的虚拟列表工具
  *
  * 虚拟列表是一种优化大量数据渲染的技术，它只渲染可视区域内的项目，而不是全部数据
@@ -80,13 +58,14 @@ export function useVirtualList(options: VirtualListOptions) {
    * 记录每个元素的起始位置
    */
   const cache = computed(() => {
-    let top = 0
     const { itemSize } = options
-    return Array.from({ length: toValue(options.length) }, (_, i) => {
-      const value = top
+    const result = Array.from<number>({ length: toValue(options.length) })
+    let top = 0
+    for (let i = 0; i < result.length; i++) {
+      result[i] = top
       top += itemSize(i)
-      return value
-    })
+    }
+    return result
   })
 
   /**
@@ -96,6 +75,15 @@ export function useVirtualList(options: VirtualListOptions) {
 
   const windowEnd = computed(() => {
     return windowStart.value + toValue(options.windowSize)
+  })
+
+  /**
+   * 整个列表的总高度
+   * 这是一个计算属性，通过最后一个项目的位置和高度计算得出
+   */
+  const contentHeight = computed(() => {
+    const index = toValue(options.length) - 1
+    return (cache.value[index] ?? 0) + options.itemSize(index)
   })
 
   const instance = reactive({
@@ -112,28 +100,18 @@ export function useVirtualList(options: VirtualListOptions) {
     windowStart,
 
     /**
+     * 整个列表的总高度
+     * 这是一个计算属性，通过最后一个项目的位置和高度计算得出
+     */
+    contentHeight,
+
+    scrollTo,
+
+    /**
      * 当前可视窗口的结束位置（底部偏移量）
      * 这是一个计算属性，由windowStart和windowSize自动计算得出
      */
     windowEnd,
-
-    /**
-     * 整个列表的总高度
-     * 这是一个计算属性，通过最后一个项目的位置和高度计算得出
-     */
-    contentHeight: computed(() => {
-      const index = toValue(options.length) - 1
-      return (cache.value[index] ?? 0) + options.itemSize(index)
-    }),
-
-    /**
-     * 滚动到指定的位置
-     * @param start 要滚动到的起始位置（顶部偏移量）
-     */
-    scrollTo: (start: number) => {
-      const maxValue = Math.max(0, instance.contentHeight - toValue(options.windowSize))
-      windowStart.value = Math.max(0, Math.min(maxValue, start))
-    },
 
     /**
      * 当前可视窗口中可见的项目信息对象数组
@@ -142,19 +120,20 @@ export function useVirtualList(options: VirtualListOptions) {
      */
     items: computed(() => {
       const start = findClosestLessOrEqual({ list: cache.value, target: windowStart.value })
-      const end = findClosestLessOrEqual({ list: cache.value, target: windowEnd.value, left: start })
-
-      return range(start, end + 1).map((index) => {
-        const top = cache.value[index] || 0
-        const height = options.itemSize(index)
-        const item: VirtualListItem = {
-          index,
-          height,
-          top,
-        }
-        return item
-      })
+      const result: number[] = []
+      let end = start
+      const list = cache.value
+      const { length } = list
+      while (end < length && list[end]! <= windowEnd.value) {
+        result.push(end)
+        end++
+      }
+      return result
     }),
+
+    itemStart: (index: number) => {
+      return cache.value[index] ?? 0
+    },
   })
 
   return instance

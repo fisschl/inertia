@@ -21,9 +21,11 @@ const items = ref<ListItem[]>([])
 // 使用 VueUse 测量容器高度
 const { height: containerHeight } = useElementSize(listContainer)
 
+const itemSize = (index: number) => items.value[index]?.height || ITEM_HEIGHT
+
 // 使用自定义虚拟列表
 const virtualList = useVirtualList({
-  itemSize: index => items.value[index]?.height || ITEM_HEIGHT, // 使用动态项目高度
+  itemSize, // 使用动态项目高度
   length: computed(() => items.value.length),
   windowSize: computed(() => containerHeight.value || 500), // 使用动态容器高度
 })
@@ -41,8 +43,6 @@ function initItems(count: number) {
 // 设置项目数量
 function setItemCount(count: number) {
   initItems(count)
-  // 重置滚动位置
-  virtualList.scrollTo(0)
 }
 
 // 处理鼠标滚轮事件
@@ -50,17 +50,8 @@ function handleWheel(event: WheelEvent) {
   event.preventDefault()
 
   const delta = event.deltaY
-  // 直接修改 windowStart，useVirtualList.scrollTo() 内部会处理范围限制
-  virtualList.scrollTo(virtualList.windowStart + delta)
+  virtualList.windowStart += delta
 }
-
-// 计算可见项列表
-const visibleItems = computed(() => {
-  return virtualList.items.map(v => ({
-    ...v,
-    data: items.value[v.index]!,
-  }))
-})
 
 // 初始化数据
 initItems(10000)
@@ -70,23 +61,15 @@ initItems(10000)
   <div class="p-6 w-full h-screen flex flex-col">
     <!-- 控制面板 -->
     <div class="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm border border-neutral-200 dark:border-neutral-700 mb-4">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            渲染: {{ visibleItems.length }} / {{ items.length }} 项
-          </p>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            v-for="count in [1000, 10000, 100000]"
-            :key="count"
-            class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white rounded text-sm transition-colors"
-            @click="setItemCount(count)"
-          >
-            {{ count.toLocaleString() }}
-          </button>
-        </div>
+      <div class="flex gap-2">
+        <button
+          v-for="count in [1000, 10000, 100000]"
+          :key="count"
+          class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white rounded text-sm transition-colors"
+          @click="setItemCount(count)"
+        >
+          {{ count.toLocaleString() }}
+        </button>
       </div>
 
       <div class="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700">
@@ -114,23 +97,23 @@ initItems(10000)
           :style="{ top: `-${virtualList.windowStart}px`, height: `${virtualList.contentHeight}px` }"
         >
           <div
-            v-for="item in visibleItems"
-            :key="item.data.id"
+            v-for="item in virtualList.items"
+            :key="item"
             class="flex absolute items-center p-3 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0 group hover:bg-neutral-100 dark:hover:bg-neutral-700 w-full"
-            :style="{ height: `${item.height}px`, top: `${item.top}px` }"
+            :style="{ height: `${itemSize(item)}px`, top: `${virtualList.itemStart(item)}px` }"
           >
             <!-- 序号徽章 -->
             <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-emerald-600 text-white rounded-full text-xs font-medium mr-3">
-              {{ item.data.id }}
+              {{ items[item]?.id }}
             </div>
 
             <!-- 内容区域 -->
             <div class="flex-1 min-w-0">
               <div class="font-medium text-neutral-900 dark:text-neutral-100 mb-0.5 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                {{ item.data.title }}
+                {{ items[item]?.title }}
               </div>
               <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                {{ item.data.description }}
+                {{ items[item]?.description }}
               </div>
             </div>
           </div>
@@ -146,15 +129,6 @@ initItems(10000)
           🖱️ 滚轮滚动
         </div>
       </div>
-    </div>
-
-    <!-- 状态信息 -->
-    <div class="mt-4 text-center">
-      <p class="text-xs text-neutral-500 dark:text-neutral-400">
-        总高: {{ Math.round(virtualList.contentHeight) }}px •
-        可见: {{ visibleItems.length }} •
-        比例: {{ ((visibleItems.length / items.length) * 100).toFixed(1) }}%
-      </p>
     </div>
   </div>
 </template>
