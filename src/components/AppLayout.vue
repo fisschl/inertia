@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Move } from 'lucide-vue-next'
+import { List, Move } from 'lucide-vue-next'
 import { markRaw } from 'vue'
 
 const examples = [
@@ -8,6 +8,12 @@ const examples = [
     description: '使用 PixiJS 和 GSAP 实现的拖拽功能，带有惯性动画效果',
     path: '/pixi-drag',
     icon: markRaw(Move),
+  },
+  {
+    name: 'DOM 虚拟列表示例',
+    description: '使用 DOM 实现的高性能虚拟列表，可处理大量数据',
+    path: '/virtual-list',
+    icon: markRaw(List),
   },
 ]
 </script>

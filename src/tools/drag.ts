@@ -16,15 +16,18 @@ export interface DraggableOptions {
 }
 
 export function createDraggable(options: DraggableOptions) {
+  // 注册GSAP插件
+  gsap.registerPlugin(InertiaPlugin, PixiPlugin)
+
+  const TRACK_PROPS = 'x,y'
+
   const draggable = {
     ...options,
     handlePointerDown(event: FederatedPointerEvent) {
       const { container } = draggable
 
-      // 注册GSAP插件
-      gsap.registerPlugin(InertiaPlugin, PixiPlugin)
       // 启用元素的惯性跟踪
-      InertiaPlugin.track(container, 'x,y')
+      InertiaPlugin.track(container, TRACK_PROPS)
 
       const state = {
         pointerX: event.clientX,
@@ -81,6 +84,7 @@ export function createDraggable(options: DraggableOptions) {
     },
     destroy() {
       const { container } = draggable
+      InertiaPlugin.untrack(container, TRACK_PROPS)
       container.off('pointerdown', draggable.handlePointerDown)
     },
   }

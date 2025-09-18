@@ -20,6 +20,7 @@ declare module 'vue-router/auto-routes' {
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
     '/pixi-drag': RouteRecordInfo<'/pixi-drag', '/pixi-drag', Record<never, never>, Record<never, never>>,
+    '/virtual-list': RouteRecordInfo<'/virtual-list', '/virtual-list', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -39,6 +40,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/pixi-drag.vue': {
       routes: '/pixi-drag'
+      views: never
+    }
+    'src/pages/virtual-list.vue': {
+      routes: '/virtual-list'
       views: never
     }
   }
