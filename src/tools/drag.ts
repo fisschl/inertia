@@ -21,76 +21,76 @@ export function createDraggable(options: DraggableOptions) {
 
   const TRACK_PROPS = 'x,y'
 
-  const draggable = {
-    ...options,
-    handlePointerDown(event: FederatedPointerEvent) {
-      const { container } = draggable
+  const handlePointerDown = (event: FederatedPointerEvent) => {
+    const { container } = options
 
-      // 启用元素的惯性跟踪
-      InertiaPlugin.track(container, TRACK_PROPS)
+    // 启用元素的惯性跟踪
+    InertiaPlugin.track(container, TRACK_PROPS)
 
-      const state = {
-        pointerX: event.clientX,
-        pointerY: event.clientY,
-        eleX: container.x,
-        eleY: container.y,
-      }
+    const state = {
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      eleX: container.x,
+      eleY: container.y,
+    }
 
-      // 创建快速移动动画函数
-      const xTo = gsap.quickTo(container, 'x', { duration: 0.1, ease: 'power4' })
-      const yTo = gsap.quickTo(container, 'y', { duration: 0.1, ease: 'power4' })
+    // 创建快速移动动画函数
+    const xTo = gsap.quickTo(container, 'x', { duration: 0.1, ease: 'power4' })
+    const yTo = gsap.quickTo(container, 'y', { duration: 0.1, ease: 'power4' })
 
-      /**
-       * 处理指针移动事件
-       */
-      const handlePointerMove = (event: PointerEvent) => {
+    /**
+     * 处理指针移动事件
+     */
+    const handlePointerMove = (event: PointerEvent) => {
       // 计算相对位移并应用到元素位置
-        xTo(state.eleX + (event.clientX - state.pointerX))
-        yTo(state.eleY + (event.clientY - state.pointerY))
-      }
+      xTo(state.eleX + (event.clientX - state.pointerX))
+      yTo(state.eleY + (event.clientY - state.pointerY))
+    }
 
-      /**
-       * 处理指针释放事件
-       */
-      const handlePointerUp = () => {
-        document.removeEventListener('pointermove', handlePointerMove)
-        document.removeEventListener('pointerup', handlePointerUp)
+    /**
+     * 处理指针释放事件
+     */
+    const handlePointerUp = () => {
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerup', handlePointerUp)
 
-        // 解构获取边界范围
-        const [minX, maxX] = options.xRange ?? []
-        const [minY, maxY] = options.yRange ?? []
+      // 解构获取边界范围
+      const [minX, maxX] = options.xRange ?? []
+      const [minY, maxY] = options.yRange ?? []
 
-        // 应用惯性动画效果
-        gsap.to(container, {
-          inertia: {
-            duration: 0.35,
-            x: {
-              velocity: 'auto',
-              min: minX,
-              max: maxX,
-            },
-            y: {
-              velocity: 'auto',
-              min: minY,
-              max: maxY,
-            },
+      // 应用惯性动画效果
+      gsap.to(container, {
+        inertia: {
+          duration: 0.35,
+          x: {
+            velocity: 'auto',
+            min: minX,
+            max: maxX,
           },
-        })
-      }
+          y: {
+            velocity: 'auto',
+            min: minY,
+            max: maxY,
+          },
+        },
+      })
+    }
 
-      // 注册事件监听器
-      document.addEventListener('pointermove', handlePointerMove)
-      document.addEventListener('pointerup', handlePointerUp)
-    },
-    destroy() {
-      const { container } = draggable
-      InertiaPlugin.untrack(container, TRACK_PROPS)
-      container.off('pointerdown', draggable.handlePointerDown)
-    },
+    // 注册事件监听器
+    document.addEventListener('pointermove', handlePointerMove)
+    document.addEventListener('pointerup', handlePointerUp)
   }
-  const { container } = draggable
-  container.on('pointerdown', draggable.handlePointerDown)
-  return draggable
+
+  const destroy = () => {
+    const { container } = options
+    InertiaPlugin.untrack(container, TRACK_PROPS)
+    container.off('pointerdown', handlePointerDown)
+  }
+
+  const { container } = options
+  container.on('pointerdown', handlePointerDown)
+
+  return { destroy }
 }
 
 export type DraggableInstance = ReturnType<typeof createDraggable>
