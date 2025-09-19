@@ -24,8 +24,6 @@ export interface VirtualListOptions {
 
   /**
    * 可视窗口的大小
-   *
-   * 表示一次能够显示的项目数量，同样可以是普通数值或Vue的响应式引用
    */
   windowSize: MaybeRefOrGetter<number>
 }
@@ -48,10 +46,10 @@ export interface VirtualListOptions {
  * });
  *
  * // 滚动到指定位置
- * virtualList.scrollTo(200);
+ * virtualList.windowStart = 200;
  *
  * // 获取当前可见的项目索引
- * const visibleItemIndices = virtualList.items.value;
+ * const visibleItemIndices = virtualList.items;
  */
 export function useVirtualList(options: VirtualListOptions) {
   /**
@@ -73,6 +71,9 @@ export function useVirtualList(options: VirtualListOptions) {
    */
   const windowStart = ref(0)
 
+  /**
+   * 窗口结束位置
+   */
   const windowEnd = computed(() => {
     return windowStart.value + toValue(options.windowSize)
   })
@@ -105,8 +106,6 @@ export function useVirtualList(options: VirtualListOptions) {
      */
     contentHeight,
 
-    scrollTo,
-
     /**
      * 当前可视窗口的结束位置（底部偏移量）
      * 这是一个计算属性，由windowStart和windowSize自动计算得出
@@ -121,7 +120,7 @@ export function useVirtualList(options: VirtualListOptions) {
     items: computed(() => {
       const start = findClosestLessOrEqual({ list: cache.value, target: windowStart.value })
       const result: number[] = []
-      let end = start
+      let end = start === -1 ? 0 : start
       const list = cache.value
       const { length } = list
       while (end < length && list[end]! <= windowEnd.value) {
@@ -131,6 +130,11 @@ export function useVirtualList(options: VirtualListOptions) {
       return result
     }),
 
+    /**
+     * 查询索引对应的项目起始位置
+     * @param index 项目的索引
+     * @returns 项目的起始位置（顶部偏移量）
+     */
     itemStart: (index: number) => {
       return cache.value[index] ?? 0
     },
@@ -191,9 +195,8 @@ function findClosestLessOrEqual(options: FindClosestLessOrEqualOptions): number 
 
   // 二分查找循环
   while (left <= right) {
-    // 计算中间索引，使用 Math.floor 确保得到整数索引
-    // 避免整数溢出的写法：Math.floor(left + (right - left) / 2)
-    const mid = Math.floor((left + right) / 2)
+    // 计算中间索引，避免整数溢出的安全写法
+    const mid = Math.floor(left + (right - left) / 2)
 
     // 获取中间位置的元素值
     const value = list[mid]
