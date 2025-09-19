@@ -1,5 +1,16 @@
 <script setup lang="ts">
+import { usePreferredDark } from '@vueuse/core'
 import AppLayout from '@/components/AppLayout.vue'
+
+const isDark = usePreferredDark()
+
+watchEffect(() => {
+  const { classList } = document.documentElement
+  if (isDark.value)
+    classList.add('dark')
+  else
+    classList.remove('dark')
+})
 </script>
 
 <template>
