@@ -26,7 +26,7 @@ const activeExample = computed(() => {
 </script>
 
 <template>
-  <div class="flex h-screen">
+  <div class="flex h-screen min-h-0">
     <ElMenu
       :default-active="activeExample?.path"
       :class="$style.aside"
@@ -45,7 +45,7 @@ const activeExample = computed(() => {
         </span>
       </ElMenuItem>
     </ElMenu>
-    <main class="flex-1 overflow-hidden relative bg-neutral-100 dark:bg-neutral-900 transition-colors duration-200">
+    <main class="flex-1 overflow-hidden relative transition-colors duration-200">
       <RouterView />
     </main>
   </div>
