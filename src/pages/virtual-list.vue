@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
-import { computed, ref } from 'vue'
 import { useVirtualList } from '../tools/virtual'
 
 // 定义列表项数据结构

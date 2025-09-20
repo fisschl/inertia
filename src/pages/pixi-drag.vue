@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DraggableInstance } from '@/tools/drag'
 import { Application, Container, Graphics, Text } from 'pixi.js'
-import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
 import { createDraggable } from '@/tools/drag'
 
 const resizeTo = useTemplateRef('canvas-container')
