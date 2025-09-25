@@ -36,20 +36,6 @@ export interface VirtualListOptions {
  *
  * @param options 虚拟列表配置选项
  * @returns 包含虚拟列表状态和方法的响应式对象
- *
- * @example
- * // 创建一个简单的虚拟列表实例
- * const virtualList = useVirtualList({
- *   itemSize: (index) => 80, // 每个项目高度80px
- *   length: 10000,          // 总共有10000个项目
- *   windowSize: 500         // 可视窗口高度500px
- * });
- *
- * // 滚动到指定位置
- * virtualList.windowStart = 200;
- *
- * // 获取当前可见的项目索引
- * const visibleItemIndices = virtualList.items;
  */
 export function useVirtualList(options: VirtualListOptions) {
   /**
@@ -246,31 +232,4 @@ function findClosestLessOrEqual(options: FindClosestLessOrEqualOptions): number 
 
   // 返回最终找到的结果索引（可能为 -1，表示所有元素都大于目标值）
   return result
-}
-
-/**
- * 生成一个左闭右开的连续数字数组
- *
- * @param start 起始值（包含）
- * @param end 结束值（不包含）
- * @returns 生成的连续数字数组
- *
- * @example
- * // 返回 [0, 1, 2, 3, 4]
- * range(0, 5)
- *
- * @example
- * // 返回 [5, 6, 7, 8, 9]
- * range(5, 10)
- *
- * @example
- * // 返回 []
- * range(5, 5)
- */
-export function range(start: number, end: number): number[] {
-  if (start >= end) {
-    return []
-  }
-
-  return Array.from({ length: end - start }, (_, i) => start + i)
 }
