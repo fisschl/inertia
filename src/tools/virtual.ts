@@ -101,6 +101,17 @@ export function useVirtualList(options: VirtualListOptions) {
     windowStart,
 
     /**
+     * 在虚拟列表中滚动指定的偏移量
+     *
+     * @param delta 偏移量（类似于 scrollBy 的 deltaY）
+     */
+    scrollBy: (delta: number) => {
+      // windowSize 应该等于容器的可见高度
+      const maxScroll = contentHeight.value - toValue(options.windowSize)
+      windowStart.value = Math.max(0, Math.min(maxScroll, windowStart.value + delta))
+    },
+
+    /**
      * 整个列表的总高度
      * 这是一个计算属性，通过最后一个项目的位置和高度计算得出
      */
