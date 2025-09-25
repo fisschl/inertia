@@ -4,24 +4,25 @@ import { List, Move, Type } from 'lucide-vue-next'
 const route = useRoute()
 
 const examples = computed(() => {
+  const { path } = route
   return [
     {
       name: 'PixiJS 拖拽示例',
       path: '/pixi-drag',
       icon: markRaw(Move),
-      isActive: route.path.startsWith('/pixi-drag'),
+      isActive: path.startsWith('/pixi-drag'),
     },
     {
       name: 'DOM 虚拟列表示例',
       path: '/virtual-list',
       icon: markRaw(List),
-      isActive: route.path.startsWith('/virtual-list'),
+      isActive: path.startsWith('/virtual-list'),
     },
     {
       name: '字体对比示例',
       path: '/font-comparison',
       icon: markRaw(Type),
-      isActive: route.path.startsWith('/font-comparison'),
+      isActive: path.startsWith('/font-comparison'),
     },
   ]
 })
