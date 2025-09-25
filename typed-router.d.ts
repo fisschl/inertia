@@ -19,6 +19,7 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    '/font-comparison': RouteRecordInfo<'/font-comparison', '/font-comparison', Record<never, never>, Record<never, never>>,
     '/pixi-drag': RouteRecordInfo<'/pixi-drag', '/pixi-drag', Record<never, never>, Record<never, never>>,
     '/virtual-list': RouteRecordInfo<'/virtual-list', '/virtual-list', Record<never, never>, Record<never, never>>,
   }
@@ -36,6 +37,10 @@ declare module 'vue-router/auto-routes' {
   export interface _RouteFileInfoMap {
     'src/pages/index.vue': {
       routes: '/'
+      views: never
+    }
+    'src/pages/font-comparison.vue': {
+      routes: '/font-comparison'
       views: never
     }
     'src/pages/pixi-drag.vue': {

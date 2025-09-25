@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { List, Move } from 'lucide-vue-next'
+import { List, Move, Type } from 'lucide-vue-next'
 
 const route = useRoute()
 
@@ -16,6 +16,12 @@ const examples = computed(() => {
       path: '/virtual-list',
       icon: markRaw(List),
       isActive: route.path.startsWith('/virtual-list'),
+    },
+    {
+      name: '字体对比示例',
+      path: '/font-comparison',
+      icon: markRaw(Type),
+      isActive: route.path.startsWith('/font-comparison'),
     },
   ]
 })
